@@ -16,6 +16,8 @@
     "babel-preset-stage-0": "^6.5.0",
     "babelify": "^7.2.0",
     "browserify": "^13.0.0",
+    "lodash": "^4.5.1",
+    "pouchdb": "^5.2.1",
     "react": "^0.14.7",
     "react-dom": "^0.14.7",
     "tcomb": "^2.7.0"

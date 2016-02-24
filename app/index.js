@@ -1,13 +1,13 @@
 import React from 'react'
 import {render} from 'react-dom'
-import {makeSomeIngredients} from './types'
+import {makeSomeVegetables} from './types'
+// import './seed'
 
 const renderIngredients = ({ ingredients }) => {
     return ingredients.map((i,k) => {
         return (
             <div key={k}>
-                <p>{i.name}</p>
-                <p>{i.expirationDate.toString()}</p>
+                <p>{i.getFullLabel()}</p>
             </div>
         )
     })
@@ -18,7 +18,7 @@ const Root = () => {
             <header>
                 <h1>Ingredients</h1>
             </header>
-            <section>{renderIngredients({ ingredients: makeSomeIngredients(10) })}</section>
+            <section>{renderIngredients({ ingredients: makeSomeVegetables() })}</section>
         </main>
     )
 }
