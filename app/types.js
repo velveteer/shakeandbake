@@ -1,13 +1,19 @@
+// TODO: Look into normalizr when setting up Redux state
 import t from 'tcomb'
 import _ from 'lodash'
 import {vegetables as vegetablesFixture} from '../fixtures'
 
 // Enums will be constructed out of these constant/finite lists
-export const SKILLS_LIST = ['chop', 'slice', 'beat', 'crush', 'mince', 'peel', 'dice']
+export const SKILLS_LIST = ['bake', 'toast', 'chop', 'slice', 'beat', 'crush', 'mince', 'peel', 'dice']
+
 export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
-export const HERB_STATES = ['whole', 'chopped', 'crushed', 'minced']
-export const VEGETABLE_STATES = ['raw', 'roasted', 'steamed', 'pureed']
-export const PROTEIN_STATES = ['raw', 'rare', 'medium rare', 'medium', 'medium well', 'well done']
+
+// States for processable ingredients
+export const BASE_STATE = ['raw']
+export const VEGETABLE_STATES = ['roasted', 'steamed', 'pureed']
+export const PROTEIN_STATES = ['rare', 'medium rare', 'medium', 'medium well', 'well done']
+export const BAKED_STATES = ['baked', 'burnt']
+export const COOKED_STATES = _.union(BASE_STATE, VEGETABLE_STATES, PROTEIN_STATES, BAKED_STATES)
 
 // A Rating is an integer between 0-100
 export const Rating = t.subtype(t.Num, n => n >= 0 && n <= 100)
@@ -20,16 +26,30 @@ export const Skill = t.struct({
 })
 
 // A user can process an ingredient with various Skills
-// The time it takes to process an ingredient depends on Skill rating + Ingredient Rating
-// Certain skills can only be applied to certain ingredients
+// The time it takes to process an ingredient depends on Skill rating + Ingredient Rating + Tool Quality
 // Quality should begin at 100 and decrease as the expiration date nears
-export const Ingredient = t.struct({
+// Some ingredients can be PROCESSED to YIELD NEW INGREDIENTS -- this is a supplementary mechanic to COMBINING ingredients with a recipe to yield new ingredients
+// TODO: Certain skills can only be applied to certain ingredients...How? Does this logic live in the model?
+export const Ingredient = t.declare('Ingredient')
+Ingredient.define(t.struct({
     _id: t.Str,
     name: t.Str,
     rating: Rating,
     expiresIn: t.Num,
-    quality: t.Num
-})
+    yields: t.maybe(t.list(t.tuple([t.enums.of(SKILLS_LIST), Ingredient]))),
+    quality: t.Num,
+    state: t.maybe(t.enums.of(COOKED_STATES))
+}))
+
+// Apply a skill to an ingredient and get a new ingredient
+Ingredient.prototype.applySkill = function (skill) {
+    const match = _.flatten(this.yields.filter(y => y[0] === skill.name))
+    if (match.length) {
+        return match[1]
+    } else {
+        return this
+    }
+}
 
 // Pretty print the state + name of an ingredient i.e. Raw Taro, Steamed Carrots
 Ingredient.prototype.getFullLabel = function () {
@@ -47,17 +67,9 @@ Ingredient.prototype.getExpirationDate = function () {
     return expirationDate.toString()
 }
 
-// Herbs are processable ingredients that have a specific state based on how they were processed (by a User skill)
-export const Herb = Ingredient.extend({ state: t.enums.of(HERB_STATES)})
-
-// Vegetables are processable ingredients that have a specific state based on how they were processed (by a User skill)
-export const Vegetable = Ingredient.extend({ state: t.enums.of(VEGETABLE_STATES)})
 export const makeSomeVegetables = () => {
-    return vegetablesFixture.map(i => Vegetable(i))
+    return vegetablesFixture.map(i => Ingredient(i))
 }
-
-// Protein ingredients are processable and have a specific state based on how they were processed (by a User skill)
-export const Protein = Ingredient.extend({ state: t.enums.of(PROTEIN_STATES)})
 
 // A Recipe is simple -- a list of ingredients required, a list of skills required
 // Meal type is a RECOMMENDED meal type, and does not count towards a meal type prefrence for Barons 
@@ -66,6 +78,7 @@ export const Recipe = t.struct({
     name: t.Str,
     items: t.list(Ingredient),
     prereqs: t.list(t.tuple([t.enums.of(SKILLS_LIST), Rating])),
+    quality: t.maybe(t.Num),
     mealType: t.enums.of(MEAL_TYPES)
 })
 
@@ -81,11 +94,21 @@ Recipe.prototype.checkPrereqs = function (skills) {
     return _.every(realSkills, s => s.rating >= prereqs[s.name])
 }
 
+// Returns a new Recipe with a specific quality based on the ingredients
+// If a Recipe has a quality it can be added to a Menu as an entree
 Recipe.prototype.cook = function () {
     const qs = this.items.map(i => i.quality)
-    return Math.floor(qs.reduce((x, y) => x + y, 0) / this.items.length)
+    const quality = Math.floor(qs.reduce((x, y) => x + y, 0) / this.items.length)
+    return Recipe.update(this, { quality: { '$set': quality }})
 }
 
+// TODO: Flesh out menu concept. A Baron will want full courses for each meal of the day. The User needs to devise a full menu given their budget and skillset.
+export const Menu = t.struct({
+    course: t.list(t.struct({
+        meal: t.enums.of(MEAL_TYPES),
+        entrees: t.list(Recipe)
+    }))
+})
 
 // TODO: Is this a fun mechanic? 
 // Higher quality equipment allows skills to be completed quicker. Low quality means low skill times.
@@ -138,7 +161,7 @@ Baron.prototype.dislikeCheck = function (ingredients) {
     return _.intersectionBy(ingredients, this.dislikes, 'name')
 }
 
-// Maybe use intersectionWith to compare STATE and NAME of recipe ingredients with preferred ingredients. Maybe get BONUS points for matching both STATE and NAME instead of just NAME
+// TODO: Maybe use intersectionWith to compare STATE and NAME of recipe ingredients with preferred ingredients. Maybe get BONUS points for matching both STATE and NAME instead of just NAME
 // https://lodash.com/docs#intersectionWith
 Baron.prototype.preferenceCheck = function (ingredients) {
     return _.intersectionBy(ingredients, this.preferences, 'name')
@@ -161,16 +184,15 @@ Baron.prototype.feed = function (recipe) {
 
 
 // Fixtures -- testing
-const Cilantro = Herb({
+const Cilantro = Ingredient({
     _id: 'cilantro',
     name: 'cilantro',
     rating: 0,
     expiresIn: 7,
-    quality: 50,
-    state: 'whole'
+    quality: 50
 })
 
-const Steak = Protein({
+const Steak = Ingredient({
     _id: 'steak',
     name: 'steak',
     rating: 0,
@@ -179,13 +201,46 @@ const Steak = Protein({
     state: 'raw'
 })
 
-const Potatoes = Vegetable({
+const Potatoes = Ingredient({
     _id: 'potatoes',
     name: 'potatoes',
     rating: 0,
     expiresIn: 30,
+    quality: 50
+})
+
+const ToastedBread = Ingredient({
+    _id: 'toast',
+    name: 'toast',
+    rating: 0,
+    expiresIn: 10,
+    quality: 100
+})
+
+const SlicedBread = Ingredient({
+    _id: 'slicedBread',
+    name: 'slicedBread',
+    rating: 0,
+    expiresIn: 10,
+    quality: 100
+})
+
+const Bread = Ingredient({
+    _id: 'bread',
+    name: 'bread',
+    rating: 0,
+    expiresIn: 10,
+    quality: 100,
+    yields: [['toast', ToastedBread], ['slice', SlicedBread]]
+})
+
+const Dough = Ingredient({
+    _id: 'dough',
+    name: 'dough',
+    rating: 0,
+    expiresIn: 30,
     quality: 50,
-    state: 'roasted'
+    yields: [['bake', Bread]]
 })
 
 const Chop = Skill({
@@ -200,6 +255,16 @@ const Slice = Skill({
 
 const Dice = Skill({
     name: 'dice',
+    rating: 1
+})
+
+const Bake = Skill({
+    name: 'bake',
+    rating: 1
+})
+
+const Toast = Skill({
+    name: 'toast',
     rating: 1
 })
 
@@ -249,14 +314,19 @@ const poisonRecipe = Recipe({
     mealType: 'dinner'
 })
 
+const testUser = User({ _id: 'user1', first: 'Test', last: 'Last', xp: 1000, skills: [Chop, Dice], bag: [] })
+
 console.assert(testBaron.feed(testRecipe1).trust === 11)
 console.assert(testBaron.feed(testRecipe2).trust === 10)
 console.assert(deadBaron.feed(poisonRecipe).isDeceased === true)
 
-const testUser = User({ _id: 'user1', first: 'Test', last: 'Last', xp: 1000, skills: [Chop, Dice], bag: [] })
-
 console.assert(testUser.getLevel() === 1)
 console.assert(testRecipe2.checkPrereqs(testUser.skills))
 console.assert(!testRecipe1.checkPrereqs(testUser.skills)) 
-console.assert(testRecipe1.cook() === 75)
-console.assert(poisonRecipe.cook() === 66)
+
+console.assert(testRecipe1.cook().quality === 75)
+console.assert(poisonRecipe.cook().quality === 66)
+
+console.assert(Dough.applySkill(Bake).name === 'bread')
+console.assert(Bread.applySkill(Toast).name === 'toast')
+console.assert(Bread.applySkill(Slice).name === 'slicedBread')
