@@ -1,52 +1,56 @@
 import _ from 'lodash'
-import {Ingredient} from '../types'
+import t from 'tcomb'
+import {Ingredient, PROCESSED_STATES, COOKED_STATES} from '../types'
 import * as fixtures from './fixtures'
 
 export const APPLY_SKILL = 'APPLY_SKILL'
 export const MAKE_COURSE = 'MAKE_COURSE'
 export const ADD_TO_BAG = 'ADD_TO_BAG'
 
-const initialState = {
-    bag: {'steak': fixtures.steak, 'carrots': fixtures.carrots, 'broccoli': fixtures.broccoli},
+const processedStateTable = t.dict(t.enums.of(PROCESSED_STATES), t.list(t.enums.of(COOKED_STATES)))
+const PROCESSED_STATE_TABLE = processedStateTable({
+    'sliced': ['toasted']
+})
+
+const Course = t.list(Ingredient)
+
+const AppState = t.struct({
+    bag: t.dict(t.Str, Ingredient),
+    menu: t.dict(t.Str, Course) 
+})
+
+const initialState = AppState({
+    // TODO: Populate bag with some kind of seeding event 
+    bag: {},
     menu: {}
-}
+})
 
 export function bag (state = initialState, action) {
     switch (action.type) {
         case APPLY_SKILL: {
-            const { ingredient, skill } = action.payload
+            const { ingredient, skill: { name, rating }} = action.payload
             if (ingredient.skills) {
-                const ingState = ingredient.skills[skill]
-                const newIngredient = { ...ingredient, states: _.uniq(ingredient.processedState.concat(ingState)) }
-                const newState = { ...state, bag: { [newIngredient.id]: newIngredient, ...state.bag }}
-                return newState
+                const processedState = ingredient.skills[name]
+                // Set processed state and remove used skill
+                const newIngredient = Ingredient.update(ingredient, { processedState: { '$set': processedState }, skills: { '$remove': [name] }})
+                const newBag = { [newIngredient.id]: newIngredient }
+                return AppState.update(state, { bag: { '$merge': newBag }})
             } 
             return state
         }
         case MAKE_COURSE: {
             const { ingredients } = action.payload
+            // Menu
             const name = generateName(ingredients)
-            
-            // Get items in bag
-            const items = _.values(state.bag)
-            // Find items that match with the course ingredients
-            const itemsToRemove = _.intersectionBy(items, ingredients, 'id')
-            
-            // Update each item and decrease its count 
-            const newItems = itemsToRemove.map(i => {
-                return Ingredient.update(i, { amount: { '$set': i.amount - 1 }})
-            })
-            
-            // Convert items back to a dictionary
-            const convertedItems = _.keyBy(newItems, 'id')
-            // Construct new bag state, remove any ingredients who have no more amount
-            const newBag = Object.assign({}, state.bag, convertedItems)
-            const newNewBag = _.omitBy(newBag, x => x.amount === 0)
-            
-            return { ...state, bag: newNewBag, menu: { ...state.menu, [name]: ingredients }}
+            const newMenu = { [name]: ingredients }
+            // Remove ingredients from bag
+            const idsToRemove = ingredients.map(i => i.id)
+            return AppState.update(state, { bag: { '$remove': idsToRemove }, menu: { '$merge': newMenu }})
         }
         case ADD_TO_BAG: {
-            
+            const { ingredient } = action.payload
+            const newBag = { [ingredient.id]: ingredient }
+            return AppState.update(state, { bag: { '$merge': newBag }})
         }
         default: {
             return state
@@ -129,11 +133,12 @@ function generateName (ingredients) {
     return final.join('');
 }
 
-const course = [fixtures.steak, fixtures.carrots]
-const course2 = [fixtures.steak, fixtures.carrots, fixtures.broccoli, fixtures.bread]
-
-//console.log(bag(initialState, { type: APPLY_SKILL, payload: { ingredient: fixtures.bread, skill: 'slice' }}))
-
-console.log(bag(initialState, { type: MAKE_COURSE, payload: { ingredients: course }}))
-console.log(bag(initialState, { type: MAKE_COURSE, payload: { ingredients: course2 }}))
-
+//const course = Course([fixtures.steak, fixtures.carrots, fixtures.bread])
+//const course2 = Course([fixtures.steak, fixtures.carrots, fixtures.broccoli, fixtures.bread])
+//
+//console.log('Apply skill: ', bag(initialState, { type: APPLY_SKILL, payload: { ingredient: fixtures.bread, skill: fixtures.slice }}))
+//
+//console.log('Make course: ', bag(initialState, { type: MAKE_COURSE, payload: { ingredients: course }}))
+////console.log(bag(initialState, { type: MAKE_COURSE, payload: { ingredients: course2 }}))
+//
+//console.log('Add to bag: ', bag(initialState, {type: ADD_TO_BAG, payload: { ingredient: fixtures.carrots }}))

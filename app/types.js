@@ -34,7 +34,6 @@ export const Skill = t.struct({
 export const Ingredient = t.struct({
     id: t.Str,
     name: t.Str,
-    amount: t.Num,
     subclass: t.Str,
     rating: Rating,
     expiresIn: t.Num,
@@ -119,13 +118,15 @@ Menu.prototype.addEntree = function (recipe) {
 // TODO: Is this a fun mechanic? 
 // Higher quality equipment allows skills to be completed quicker. Low quality means low skill times.
 // Having to maintain equipment is tedious, but upgrading equipment can be rewarding.
-export const Equipment = t.struct({
+export const Tool = t.struct({
     price: t.Num,
     type: t.Str,
-    quality: t.Num,
-    wear: t.Num
+    quality: t.Num
 })
 
+export const Bag = t.struct({
+   // TODO 
+})
 // A user maintains experience and an array of various skills that increase in rating with repeated use
 export const User = t.struct({
     _id: t.Str,

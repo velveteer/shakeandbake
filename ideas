@@ -49,3 +49,11 @@ CLASSES
     //Steak is a subclass of protein and fries are a subclass of starch
     
 Re
+
+
+****
+User can only mix a certain amount of ingredients in a course based on level
+LEVEL 1 - 3 
+LEVEL 5 - 4
+LEVEL 10  - 5
+etc.
