@@ -1,27 +1,24 @@
 import _ from 'lodash'
 import t from 'tcomb'
-import {Ingredient, PROCESSED_STATES, COOKED_STATES} from '../types'
+import {Ingredient} from '../types'
 import * as fixtures from './fixtures'
 
 export const APPLY_SKILL = 'APPLY_SKILL'
 export const MAKE_COURSE = 'MAKE_COURSE'
 export const ADD_TO_BAG = 'ADD_TO_BAG'
 
-const processedStateTable = t.dict(t.enums.of(PROCESSED_STATES), t.list(t.enums.of(COOKED_STATES)))
-const PROCESSED_STATE_TABLE = processedStateTable({
-    'sliced': ['toasted']
-})
-
 const Course = t.list(Ingredient)
 
 const AppState = t.struct({
     bag: t.dict(t.Str, Ingredient),
+    staging: t.list(Ingredient),
     menu: t.dict(t.Str, Course) 
 })
 
 const initialState = AppState({
     // TODO: Populate bag with some kind of seeding event 
     bag: {},
+    staging: [],
     menu: {}
 })
 

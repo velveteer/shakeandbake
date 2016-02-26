@@ -1,20 +1,26 @@
-// TODO: Look into normalizr when setting up Redux state
 import t from 'tcomb'
 import _ from 'lodash'
 import {vegetables as vegetablesFixture} from '../fixtures'
 
 // Enums will be constructed out of these constant/finite lists
-export const SKILLS_LIST = ['bake', 'toast', 'chop', 'slice', 'beat', 'crush', 'mince', 'peel', 'dice', 'steam']
-export const PROCESSED_STATES = ['unprocessed', 'chopped', 'sliced', 'beaten', 'crushed', 'minced', 'peeled', 'diced']
-
 export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 
-// States for processable ingredients
-export const BASE_STATE = ['raw']
-export const VEGETABLE_STATES = ['roasted', 'steamed', 'pureed']
-export const PROTEIN_STATES = ['rare', 'medium rare', 'medium', 'medium well', 'well done']
-export const BAKED_STATES = ['baked', 'burnt', 'toasted']
-export const COOKED_STATES = _.union(BASE_STATE, VEGETABLE_STATES, PROTEIN_STATES, BAKED_STATES)
+// Processing Skills
+export const P_PROCESSING_SKILLS = [{'cube': 'cubed'}, {'slice': 'sliced'}]
+export const VF_PROCESSING_SKILLS = [{'chop': 'chopped'}, {'slice': 'sliced'}, {'mince': 'minced'}, {'peel': 'peeled'}]
+export const PROCESSING_SKILLS = _.flatMap(_.union(P_PROCESSING_SKILLS, VF_PROCESSING_SKILLS), x => _.keys(x))
+export const PROCESSING_STATES = ['unprocessed'].concat(_.flatMap(_.union(P_PROCESSING_SKILLS, VF_PROCESSING_SKILLS), x => _.values(x)))
+
+// Cooking Skills
+export const A_COOKING_SKILLS = [{'fry': 'fried'}] // because you can fry anything
+export const VF_COOKING_SKILLS = [{'bake': 'baked'}, {'grill': 'grilled'}, {'steam': 'steamed'}, {'roast': 'roasted'}]
+export const P_COOKING_SKILLS = [{'roast': 'roasted'}, {'grill': 'grilled'}]
+export const COOKING_SKILLS = _.flatMap(_.union(A_COOKING_SKILLS, VF_COOKING_SKILLS, P_COOKING_SKILLS), x => _.keys(x))
+export const COOKING_STATES = ['raw'].concat(_.flatMap(_.union(A_COOKING_SKILLS, VF_COOKING_SKILLS, P_COOKING_SKILLS), x => _.values(x)))
+
+// All skills and states
+export const SKILLS_LIST = _.union(PROCESSING_SKILLS, COOKING_SKILLS)
+export const STATES_LIST = _.union(PROCESSING_STATES, COOKING_STATES)
 
 // A Rating is an integer between 0-100
 export const Rating = t.subtype(t.Num, n => n >= 0 && n <= 100)
@@ -26,21 +32,19 @@ export const Skill = t.struct({
     rating: Rating
 })
 
-// A user can process an ingredient with various Skills
-// The time it takes to process an ingredient depends on Skill rating + Ingredient Rating + Tool Quality
+// A user can process an ingredient with various Tools, which enact Skills
+// The time it takes to process an ingredient depends on Skill rating + Tool rating + Tool quality
 // Quality should begin at 100 and decrease as the expiration date nears
-// Some ingredients can be PROCESSED to YIELD NEW INGREDIENTS -- this is a supplementary mechanic to COMBINING ingredients with a recipe to yield new ingredients
-// NOTE: This is a recursive type
+// TODO: We can add more fields for different kinds of Baron preferences -- such as "doneness" for certain foods based on how long it was cooked for
 export const Ingredient = t.struct({
     id: t.Str,
     name: t.Str,
     subclass: t.Str,
     rating: Rating,
     expiresIn: t.Num,
-    skills: t.maybe(t.dict(t.enums.of(SKILLS_LIST), t.enums.of(PROCESSED_STATES))),
     quality: t.Num,
-    cookedState: t.enums.of(COOKED_STATES),
-    processedState: t.enums.of(PROCESSED_STATES)
+    cookedState: t.enums.of(COOKING_STATES),
+    processedState: t.enums.of(PROCESSING_STATES)
 })
 
 // Apply a skill to an ingredient and get a new ingredient

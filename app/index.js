@@ -8,29 +8,28 @@ import { connect, Provider } from 'react-redux'
 import {ADD_TO_BAG} from './domains/bag'
 import * as fixtures from './domains/fixtures'
 
+const BagItems = ({ items }) => {
+    const grouped = _.groupBy(items, 'name')
+    const formattedItems = []
+    _.forIn(grouped, (value, key) => {
+        const string = value.length ? `${key} (${value.length})` : `${key}`
+        formattedItems.push(<li key={key}>{string}</li>)
+    })
+    return <ul> {formattedItems} </ul>
+}
+
 // TODO: Move actions into action creators
 let Bag = ({ items, dispatch }) => {
-    const grouped = _.groupBy(items, 'name')
-    const itemsWithCount = () => {
-        const arr = []
-        _.forIn(grouped, (value, key) => {
-            const string = value.length ? `${key} (${value.length})` : `${key}`
-            arr.push(<li key={key}>{string}</li>)
-        })
-        return arr
-    }
     return (
         <div>
             <h1>Bag</h1>
-            <nav>
+            <header>
                 <button onClick={ () => dispatch({ type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient('vegetable')}}) }>Add random vegetable</button>
                 <button onClick={ () => dispatch({ type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient('fruit')}}) }>Add random fruit</button>
                 <button onClick={ () => dispatch({ type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient('protein')}}) }>Add random protein</button>
                 <button onClick={ () => dispatch({ type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient('grain')}}) }>Add random grain</button>
-            </nav>
-            <ul>
-            {  itemsWithCount() }
-            </ul>
+            </header>
+            <BagItems items={items} />
         </div>
     )
 }
