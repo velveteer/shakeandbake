@@ -4,7 +4,8 @@ import _ from 'lodash'
 import {vegetables as vegetablesFixture} from '../fixtures'
 
 // Enums will be constructed out of these constant/finite lists
-export const SKILLS_LIST = ['bake', 'toast', 'chop', 'slice', 'beat', 'crush', 'mince', 'peel', 'dice']
+export const SKILLS_LIST = ['bake', 'toast', 'chop', 'slice', 'beat', 'crush', 'mince', 'peel', 'dice', 'steam']
+export const PROCESSED_STATES = ['unprocessed', 'chopped', 'sliced', 'beaten', 'crushed', 'minced', 'peeled', 'diced']
 
 export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 
@@ -12,7 +13,7 @@ export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 export const BASE_STATE = ['raw']
 export const VEGETABLE_STATES = ['roasted', 'steamed', 'pureed']
 export const PROTEIN_STATES = ['rare', 'medium rare', 'medium', 'medium well', 'well done']
-export const BAKED_STATES = ['baked', 'burnt']
+export const BAKED_STATES = ['baked', 'burnt', 'toasted']
 export const COOKED_STATES = _.union(BASE_STATE, VEGETABLE_STATES, PROTEIN_STATES, BAKED_STATES)
 
 // A Rating is an integer between 0-100
@@ -29,17 +30,19 @@ export const Skill = t.struct({
 // The time it takes to process an ingredient depends on Skill rating + Ingredient Rating + Tool Quality
 // Quality should begin at 100 and decrease as the expiration date nears
 // Some ingredients can be PROCESSED to YIELD NEW INGREDIENTS -- this is a supplementary mechanic to COMBINING ingredients with a recipe to yield new ingredients
-// TODO: Certain skills can only be applied to certain ingredients...How? Does this logic live in the model?
-export const Ingredient = t.declare('Ingredient')
-Ingredient.define(t.struct({
-    _id: t.Str,
+// NOTE: This is a recursive type
+export const Ingredient = t.struct({
+    id: t.Str,
     name: t.Str,
+    amount: t.Num,
+    subclass: t.Str,
     rating: Rating,
     expiresIn: t.Num,
-    yields: t.maybe(t.list(t.tuple([t.enums.of(SKILLS_LIST), Ingredient]))),
+    skills: t.maybe(t.dict(t.enums.of(SKILLS_LIST), t.enums.of(PROCESSED_STATES))),
     quality: t.Num,
-    state: t.maybe(t.enums.of(COOKED_STATES))
-}))
+    cookedState: t.enums.of(COOKED_STATES),
+    processedState: t.enums.of(PROCESSED_STATES)
+})
 
 // Apply a skill to an ingredient and get a new ingredient
 Ingredient.prototype.applySkill = function (skill) {
@@ -67,10 +70,6 @@ Ingredient.prototype.getExpirationDate = function () {
     return expirationDate.toString()
 }
 
-export const makeSomeVegetables = () => {
-    return vegetablesFixture.map(i => Ingredient(i))
-}
-
 // A Recipe is simple -- a list of ingredients required, a list of skills required
 // Meal type is a RECOMMENDED meal type, and does not count towards a meal type prefrence for Barons 
 export const Recipe = t.struct({
@@ -96,19 +95,26 @@ Recipe.prototype.checkPrereqs = function (skills) {
 
 // Returns a new Recipe with a specific quality based on the ingredients
 // If a Recipe has a quality it can be added to a Menu as an entree
-Recipe.prototype.cook = function () {
-    const qs = this.items.map(i => i.quality)
-    const quality = Math.floor(qs.reduce((x, y) => x + y, 0) / this.items.length)
+// TODO: How do we enforce items arg contains the correct items?
+Recipe.prototype.cook = function (items) {
+    const qs = items.map(i => i.quality)
+    const quality = Math.floor(qs.reduce((x, y) => x + y, 0) / items.length)
     return Recipe.update(this, { quality: { '$set': quality }})
 }
 
 // TODO: Flesh out menu concept. A Baron will want full courses for each meal of the day. The User needs to devise a full menu given their budget and skillset.
 export const Menu = t.struct({
-    course: t.list(t.struct({
-        meal: t.enums.of(MEAL_TYPES),
-        entrees: t.list(Recipe)
-    }))
+    entrees: t.list(Recipe)
 })
+
+Menu.prototype.addEntree = function (recipe) {
+    if (recipe.quality) {
+        // TODO
+    } else {
+        return this
+    }
+    
+}
 
 // TODO: Is this a fun mechanic? 
 // Higher quality equipment allows skills to be completed quicker. Low quality means low skill times.
@@ -126,12 +132,46 @@ export const User = t.struct({
     first: t.Str,
     last: t.Str,
     xp: t.Num, 
-    skills: t.list(Skill),
-    bag: t.list(Ingredient)
+    skills: t.list(Skill)
 })
 
 User.prototype.getLevel = function () { 
     return Math.sqrt(this.xp/1000)
+}
+
+//so our ingredients param could still be a list, since that would be easier,
+//I think, than building an object with many properties when we add
+User.prototype.addIngredient = function (ingredient) {
+    /*const newBag = _.mergeWith(this.bag, ingredient, (bagValue, itemValue) => {
+        console.log(bagValue, itemValue)
+    })*/
+    const name = Object.keys(ingredient)[0]
+    if (this.bag[name]){
+        return User.update(this, {bag: {[name]: {'$set': this.bag[name] + ingredient[name]}}})
+    }
+    else {
+        return User.update(this, {bag: {[name]: {'$set': ingredient[name]}}})
+    }
+    //const newItem = BagItem.update(item, { [item]: { '$set': 1000 }})
+    //const test = User.update(this, { bag: {'$merge': newItem }})
+}
+
+User.prototype.removeIngredient = function (ingredient) {
+    /*const newBag = _.mergeWith(this.bag, ingredient, (bagValue, itemValue) => {
+        console.log(bagValue, itemValue)
+    })*/
+    const name = Object.keys(ingredient)[0]
+    if (this.bag[name]){
+        if (this.bag[name] - ingredient[name] <= 0){
+            return User.update(this, {bag: {'$remove': [name]}});
+        }
+        else return User.update(this, {bag: {[name]: {'$set': this.bag[name] - ingredient[name]}}})
+    }
+    else {
+        return User.update(this, {bag: {[name]: {'$set': ingredient[name]}}})
+    }
+    //const newItem = BagItem.update(item, { [item]: { '$set': 1000 }})
+    //const test = User.update(this, { bag: {'$merge': newItem }})
 }
 
 // A Baron pays the User a weekly stipend to buy ingredients for his meals
@@ -183,150 +223,158 @@ Baron.prototype.feed = function (recipe) {
 
 
 
-// Fixtures -- testing
-const Cilantro = Ingredient({
-    _id: 'cilantro',
-    name: 'cilantro',
-    rating: 0,
-    expiresIn: 7,
-    quality: 50
-})
-
-const Steak = Ingredient({
-    _id: 'steak',
-    name: 'steak',
-    rating: 0,
-    expiresIn: 10,
-    quality: 100,
-    state: 'raw'
-})
-
-const Potatoes = Ingredient({
-    _id: 'potatoes',
-    name: 'potatoes',
-    rating: 0,
-    expiresIn: 30,
-    quality: 50
-})
-
-const ToastedBread = Ingredient({
-    _id: 'toast',
-    name: 'toast',
-    rating: 0,
-    expiresIn: 10,
-    quality: 100
-})
-
-const SlicedBread = Ingredient({
-    _id: 'slicedBread',
-    name: 'slicedBread',
-    rating: 0,
-    expiresIn: 10,
-    quality: 100
-})
-
-const Bread = Ingredient({
-    _id: 'bread',
-    name: 'bread',
-    rating: 0,
-    expiresIn: 10,
-    quality: 100,
-    yields: [['toast', ToastedBread], ['slice', SlicedBread]]
-})
-
-const Dough = Ingredient({
-    _id: 'dough',
-    name: 'dough',
-    rating: 0,
-    expiresIn: 30,
-    quality: 50,
-    yields: [['bake', Bread]]
-})
-
-const Chop = Skill({
-    name: 'chop',
-    rating: 20
-})
-
-const Slice = Skill({
-    name: 'slice',
-    rating: 20
-})
-
-const Dice = Skill({
-    name: 'dice',
-    rating: 1
-})
-
-const Bake = Skill({
-    name: 'bake',
-    rating: 1
-})
-
-const Toast = Skill({
-    name: 'toast',
-    rating: 1
-})
-
-const testBaron = Baron({
-    _id: 'heinz',
-    name: 'Heinz the Baron Kraus von Espy', 
-    level: 1, 
-    allergies: [Cilantro],
-    dislikes: [],
-    isDeceased: false,
-    preferences: [Steak],
-    trust: 10
-})
-
-const deadBaron = Baron({
-    _id: 'adolf',
-    name: 'Baron Adolf Hans Gruber',
-    level: 1, 
-    allergies: [Cilantro, Steak, Potatoes],
-    dislikes: [],
-    preferences: [],
-    isDeceased: false,
-    trust: 10
-})
-
-const testRecipe1 = Recipe({
-    _id: 'filet mignon',
-    name: 'filet mignon',
-    items: [Potatoes, Steak],
-    prereqs: [['chop', 50]],
-    mealType: 'dinner'
-})
-
-const testRecipe2 = Recipe({
-    _id: 'street tacos',
-    name: 'street tacos',
-    items: [Cilantro, Steak],
-    prereqs: [['chop', 10], ['slice', 20]],
-    mealType: 'dinner'
-})
-
-const poisonRecipe = Recipe({
-    _id: 'carne guisada',
-    name: 'carne guisada',
-    items: [Cilantro, Potatoes, Steak],
-    prereqs: [['chop', 10], ['slice', 20]],
-    mealType: 'dinner'
-})
-
-const testUser = User({ _id: 'user1', first: 'Test', last: 'Last', xp: 1000, skills: [Chop, Dice], bag: [] })
-
-console.assert(testBaron.feed(testRecipe1).trust === 11)
-console.assert(testBaron.feed(testRecipe2).trust === 10)
-console.assert(deadBaron.feed(poisonRecipe).isDeceased === true)
-
-console.assert(testUser.getLevel() === 1)
-console.assert(testRecipe2.checkPrereqs(testUser.skills))
-console.assert(!testRecipe1.checkPrereqs(testUser.skills)) 
-
-console.assert(testRecipe1.cook().quality === 75)
-console.assert(poisonRecipe.cook().quality === 66)
-
-console.assert(Dough.applySkill(Bake).name === 'bread')
-console.assert(Bread.applySkill(Toast).name === 'toast')
-console.assert(Bread.applySkill(Slice).name === 'slicedBread')
+//// Fixtures -- testing
+//const Cilantro = Ingredient({
+//    _id: 'cilantro',
+//    name: 'cilantro',
+//    rating: 0,
+//    expiresIn: 7,
+//    quality: 50
+//})
+//
+//const Steak = Ingredient({
+//    _id: 'steak',
+//    name: 'steak',
+//    rating: 0,
+//    expiresIn: 10,
+//    quality: 100,
+//    state: 'raw'
+//})
+//
+//const Potatoes = Ingredient({
+//    _id: 'potatoes',
+//    name: 'potatoes',
+//    rating: 0,
+//    expiresIn: 30,
+//    quality: 50
+//})
+//
+//const ToastedBread = Ingredient({
+//    _id: 'toast',
+//    name: 'toast',
+//    rating: 0,
+//    expiresIn: 10,
+//    quality: 100
+//})
+//
+//const SlicedBread = Ingredient({
+//    _id: 'slicedBread',
+//    name: 'slicedBread',
+//    rating: 0,
+//    expiresIn: 10,
+//    quality: 100
+//})
+//
+//const Bread = Ingredient({
+//    _id: 'bread',
+//    name: 'bread',
+//    rating: 0,
+//    expiresIn: 10,
+//    quality: 100,
+//    yields: [['toast', ToastedBread], ['slice', SlicedBread]]
+//})
+//
+//const Dough = Ingredient({
+//    _id: 'dough',
+//    name: 'dough',
+//    rating: 0,
+//    expiresIn: 30,
+//    quality: 50,
+//    yields: [['bake', Bread]]
+//})
+//
+//const Chop = Skill({
+//    name: 'chop',
+//    rating: 20
+//})
+//
+//const Slice = Skill({
+//    name: 'slice',
+//    rating: 20
+//})
+//
+//const Dice = Skill({
+//    name: 'dice',
+//    rating: 1
+//})
+//
+//const Bake = Skill({
+//    name: 'bake',
+//    rating: 1
+//})
+//
+//const Toast = Skill({
+//    name: 'toast',
+//    rating: 1
+//})
+//
+//const testBaron = Baron({
+//    _id: 'heinz',
+//    name: 'Heinz the Baron Kraus von Espy', 
+//    level: 1, 
+//    allergies: [Cilantro],
+//    dislikes: [],
+//    isDeceased: false,
+//    preferences: [Steak],
+//    trust: 10
+//})
+//
+//const deadBaron = Baron({
+//    _id: 'adolf',
+//    name: 'Baron Adolf Hans Gruber',
+//    level: 1, 
+//    allergies: [Cilantro, Steak, Potatoes],
+//    dislikes: [],
+//    preferences: [],
+//    isDeceased: false,
+//    trust: 10
+//})
+//
+//const testRecipe1 = Recipe({
+//    _id: 'filet mignon',
+//    name: 'filet mignon',
+//    items: [Potatoes, Steak],
+//    prereqs: [['chop', 50]],
+//    mealType: 'dinner'
+//})
+//
+//const testRecipe2 = Recipe({
+//    _id: 'street tacos',
+//    name: 'street tacos',
+//    items: [Cilantro, Steak],
+//    prereqs: [['chop', 10], ['slice', 20]],
+//    mealType: 'dinner'
+//})
+//
+//const poisonRecipe = Recipe({
+//    _id: 'carne guisada',
+//    name: 'carne guisada',
+//    items: [Cilantro, Potatoes, Steak],
+//    prereqs: [['chop', 10], ['slice', 20]],
+//    mealType: 'dinner'
+//})
+//
+//const testUser = User({ _id: 'user1', first: 'Test', last: 'Last', xp: 1000, skills: [Chop, Dice], bag: {cilantro: 10, potatoes: 5} })
+//
+//console.assert(testUser.addIngredient({cilantro: 1 }).bag.cilantro === 11)
+//console.assert(testUser.addIngredient({steak: 1}).bag.steak === 1);
+//
+//console.assert(testUser.removeIngredient({cilantro: 1}).bag.cilantro === 9);
+//console.assert(!testUser.removeIngredient({cilantro: 10}).bag.cilantro)
+//console.assert(!testUser.removeIngredient({cilantro: 11}).bag.cilantro)
+//
+//console.assert(testBaron.feed(testRecipe1).trust === 11)
+//console.assert(testBaron.feed(testRecipe2).trust === 10)
+//console.assert(deadBaron.feed(poisonRecipe).isDeceased === true)
+//
+//console.assert(testUser.getLevel() === 1)
+//console.assert(testRecipe2.checkPrereqs(testUser.skills))
+//console.assert(!testRecipe1.checkPrereqs(testUser.skills)) 
+//
+//// TODO: Need to pass in items from User's inventory (bag)
+////console.assert(testRecipe1.cook().quality === 75)
+////console.assert(poisonRecipe.cook().quality === 66)
+//
+//console.assert(Dough.applySkill(Bake).name === 'bread')
+//console.assert(Bread.applySkill(Toast).name === 'toast')
+//console.assert(Bread.applySkill(Slice).name === 'slicedBread')

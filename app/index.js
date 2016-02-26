@@ -1,6 +1,6 @@
 import React from 'react'
 import {render} from 'react-dom'
-import {makeSomeVegetables} from './types'
+import './domains/bag'
 // import './seed'
 
 const renderIngredients = ({ ingredients }) => {
@@ -18,7 +18,6 @@ const Root = () => {
             <header>
                 <h1>Ingredients</h1>
             </header>
-            <section>{renderIngredients({ ingredients: makeSomeVegetables() })}</section>
         </main>
     )
 }
