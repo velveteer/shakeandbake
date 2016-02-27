@@ -5,8 +5,63 @@ import {render} from 'react-dom'
 import store from './store'
 import { connect, Provider } from 'react-redux'
 
-import {ADD_TO_BAG} from './domains/bag'
+import {addToBag, applySkill} from './domains/bag'
 import * as fixtures from './domains/fixtures'
+
+let KitchenContainer = ({...props}) => {
+    return (
+        <div> 
+            <Bag {...props} />
+            <ToolBelt {...props} />
+        </div>
+    )
+}
+
+const mapStateToProps = (state, ownProps) => {
+    return {
+        items: _.values(state.bag),
+        skills: _.values(state.user.skills),
+        user: state.user
+    }
+}
+
+const mapDispatchToProps = (dispatch, ownProps) => {
+    return {
+        addToBag: () => {
+            dispatch(addToBag())
+        },
+        applySkill: () => {
+            dispatch(applySkill)
+        }
+    }
+}
+
+KitchenContainer = connect(mapStateToProps, mapDispatchToProps)(KitchenContainer)
+
+const ToolBelt = ({ user: { tools }}) => {
+    return (
+        <div>
+            <h1>Toolbelt</h1>
+            <ul>
+                { _.values(tools).map(tool => <li key={tool.name}>{ `${tool.name} ${tool.rating}` }</li>) }
+            </ul>
+        </div>
+    )
+}
+
+const Bag = ({ items, skills, addToBag, applySkill }) => {
+    return (
+        <div>
+            <h1>Bag</h1>
+            <header>
+                <button onClick={addToBag}>Add random item</button>
+            </header>
+            <BagItems items={items} applySkill={applySkill} />
+        </div>
+    )
+}
+
+const BagItem = ({ name, id }) => {}
 
 const BagItems = ({ items }) => {
     const grouped = _.groupBy(items, 'name')
@@ -18,28 +73,15 @@ const BagItems = ({ items }) => {
     return <ul> {formattedItems} </ul>
 }
 
-// TODO: Move actions into action creators
-let Bag = ({ items, dispatch }) => {
-    return (
-        <div>
-            <h1>Bag</h1>
-            <header>
-                <button onClick={ () => dispatch({ type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient('vegetable')}}) }>Add random vegetable</button>
-                <button onClick={ () => dispatch({ type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient('fruit')}}) }>Add random fruit</button>
-                <button onClick={ () => dispatch({ type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient('protein')}}) }>Add random protein</button>
-                <button onClick={ () => dispatch({ type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient('grain')}}) }>Add random grain</button>
-            </header>
-            <BagItems items={items} />
-        </div>
-    )
-}
 
-Bag = connect(state => ({ items: _.values(state.bag) }))(Bag)
+const Staging = ({ items }) => {
+    
+}
 
 const Root = () => {
     return (
         <main>
-            <Bag />
+            <KitchenContainer />
         </main>
     )
 }

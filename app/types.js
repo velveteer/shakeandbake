@@ -5,6 +5,8 @@ import {vegetables as vegetablesFixture} from '../fixtures'
 // Enums will be constructed out of these constant/finite lists
 export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 
+export const TOOLS_LIST = [['joshs chefs knife', 1], ['richs trusty blade', 10], ['masamune', 100]]
+
 export const SKILL_STATE_TABLE = {
     cube: 'cubed',
     chop: 'chopped',
@@ -44,20 +46,21 @@ export const Rating = t.subtype(t.Num, n => n >= 0 && n <= 100)
 // The rating is used to calculate speed and resulting quality
 export const Skill = t.struct({
     name: t.enums.of(SKILLS_LIST),
-    rating: Rating
+    level: Rating
 })
 
 // A user can process an ingredient with various Tools, which enact Skills
-// The time it takes to process an ingredient depends on Skill rating + Tool rating + Tool quality
+// The time it takes to process an ingredient depends on Base level + Skill level + Tool quality
 // Quality should begin at 100 and decrease as the expiration date nears
 // TODO: We can add more fields for different kinds of Baron preferences -- such as "doneness" for certain foods based on how long it was cooked for
 export const Ingredient = t.struct({
     id: t.Str,
     name: t.Str,
     subclass: t.Str,
-    rating: Rating,
     expiresIn: t.Num,
-    quality: t.Num,
+    quality: Rating,
+    isProcessing: t.Bool,
+    processCount: t.Num,
     cookedState: t.enums.of(COOKING_STATES),
     processedState: t.enums.of(PROCESSING_STATES)
 })
@@ -83,22 +86,23 @@ Ingredient.prototype.getExpirationDate = function () {
 // Higher quality equipment allows skills to be completed quicker. Low quality means low skill times.
 // Having to maintain equipment is tedious, but upgrading equipment can be rewarding.
 export const Tool = t.struct({
-    price: t.Num,
-    type: t.Str,
-    quality: t.Num
+    name: t.Str,
+    rating: Rating,
+    quality: Rating
 })
 
 // A user maintains experience and an array of various skills that increase in rating with repeated use
 export const User = t.struct({
-    _id: t.Str,
+    id: t.Str,
     first: t.Str,
     last: t.Str,
     xp: t.Num, 
-    skills: t.list(Skill)
+    skills: t.dict(t.Str, Skill),
+    tools: t.dict(t.Str, Tool)
 })
 
 User.prototype.getLevel = function () { 
-    return Math.sqrt(this.xp/1000)
+    return Math.floor(Math.sqrt(this.xp/1000))
 }
 
 // A Baron pays the User a weekly stipend to buy ingredients for his meals
@@ -153,5 +157,6 @@ export const AppState = t.struct({
     bag: t.dict(t.Str, Ingredient),
     staging: t.dict(t.Str, Ingredient),
     menu: t.dict(t.Str, Course),
-    skillTable: t.Object
+    skillTable: t.Object,
+    user: User
 })

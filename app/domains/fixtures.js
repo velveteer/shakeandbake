@@ -10,14 +10,15 @@ const names = {
 }
 
 // Ingredient generator
-export function makeRandomIngredient(subclass) {
+export function makeRandomIngredient (subclass) {
     return types.Ingredient({
         id: uuid.v4(),
         name: _.shuffle(names[subclass])[0],
         subclass: subclass,
-        rating: _.random(0, 10),
         expiresIn: _.random(5, 30),
         quality: _.random(0, 100),
+        isProcessing: false,
+        processCount: 0,
         cookedState: 'raw',
         processedState: 'unprocessed'
     })
@@ -25,7 +26,21 @@ export function makeRandomIngredient(subclass) {
 }
 
 // Skills
-export const slice = types.Skill({
-    name: 'slice',
-    rating: 10
+function makeAllSkills () {
+    return _.keyBy(types.SKILLS_LIST.map(i => types.Skill({name: i, level: 1})), 'name')
+}
+
+// Tools
+function makeAllTools () {
+    return _.keyBy(types.TOOLS_LIST.map(i => types.Tool({name: i[0], rating: i[1], quality: 100})), 'name')
+}
+
+// User
+export const user = types.User({
+    id: uuid.v4(),
+    first: 'Duke',
+    last: 'Of York',
+    xp: 1000,
+    skills: makeAllSkills(),
+    tools: makeAllTools()
 })
