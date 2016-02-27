@@ -1,19 +1,27 @@
 import _ from 'lodash'
 import t from 'tcomb'
-import {Ingredient, AppState, Course, SKILL_STATE_TABLE, SUBCLASS_SKILLS_TABLE} from '../types'
+import {Ingredient, AppState, Course, SUBCLASSES, SKILL_STATE_TABLE, SUBCLASS_SKILLS_TABLE} from '../types'
 import * as fixtures from './fixtures'
 
+// Action Types (Constants)
 export const APPLY_SKILL_START = 'APPLY_SKILL_START'
 export const APPLY_SKILL_END = 'APPLY_SKILL_END'
-// APPLY_SKILL_CANCEL ?
 export const COOK_ITEM = 'COOK_ITEM'
 export const MAKE_COURSE = 'MAKE_COURSE'
 export const ADD_TO_BAG = 'ADD_TO_BAG'
+export const SHUFFLE_BAG = 'SHUFFLE_BAG'
 export const SELECT_TOOL = 'SELECT_TOOL'
+export const PRESENT_SKILL_OPTIONS = 'PRESENT_SKILL_OPTIONS'
 
+
+// Action Creators
 export const addToBag = ingredient => {
-    const subclasses = ['protein', 'vegetable', 'fruit', 'grain', 'herb']
-    return { type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient(_.shuffle(subclasses)[0]) }}
+    return { type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient(_.shuffle(SUBCLASSES)[0]) }}
+}
+
+export const shuffleBag = () => {
+    const ingredients = _.keyBy(SUBCLASSES.map(i => fixtures.makeRandomIngredient(i)), 'id')
+    return { type: SHUFFLE_BAG, payload: { ingredients: ingredients }}
 }
 
 export const applySkill = (ingredient, skill, tool) => {
@@ -28,22 +36,7 @@ export const selectTool = tool => {
     return { type: SELECT_TOOL, payload: { tool }}
 }
 
-const weights = {
-    'protein': 1,
-    'fruit': 1.3,
-    'vegetable': 1.3,
-    'grain': 1.5,
-    'dairy': 1.7,
-    'herb': 1.8
-}
-
-function getTime (ingredient, skill, tool) {
-    const x = 1/(-(weights[ingredient.subclass] + skill.level/100))
-    console.log(x)
-    const time = ((3 * (Math.pow(x, 2))) - 2 *(Math.pow(x, 3)) * 20000) - (tool.quality * 10) - (skill.level * 5)
-    return Math.round(time)
-}
-
+// Reducer
 const initialState = AppState({
     // TODO: Populate bag with some kind of seeding event
     bag: {},
@@ -67,14 +60,16 @@ export function bag (state = initialState, action) {
         case APPLY_SKILL_START: {
             const { ingredient, time } = action.payload
             const newIngredient = Ingredient.update(ingredient, { time: { '$set': time }})
-            return AppState.update(state, { bag: { '$merge': { [newIngredient.id]: newIngredient }}})
+            return AppState.update(state, { bag: { '$merge': { [newIngredient.id]: newIngredient }}, skillOptions: { '$set': null }})
         }
         case APPLY_SKILL_END: {
             // Apply state to ingredient, remove it from the bag, move it to prep area
-            const { ingredient, skill: { name, level }} = action.payload
+            const { ingredient, skill: { name }} = action.payload
             const processedState = state._skillTable[name]
             const newIngredient = Ingredient.update(ingredient, { processedState: { '$set': processedState}, time: { '$set': 0 }})
-            return AppState.update(state, { bag: { '$remove': [newIngredient.id] }, preppedItems: { '$merge': { [newIngredient.id]: newIngredient } }})
+            // Rename ingredient based on new state
+            const renamedIngredient = Ingredient.update(newIngredient, { name: { '$set': generateItemName(newIngredient) }})
+            return AppState.update(state, { bag: { '$remove': [newIngredient.id] }, preppedItems: { '$merge': { [newIngredient.id]: renamedIngredient } }})
         }
         case COOK_ITEM: {
             // Can only cook items that are staged (processed)
@@ -97,10 +92,32 @@ export function bag (state = initialState, action) {
             const newBag = { [ingredient.id]: ingredient }
             return AppState.update(state, { bag: { '$merge': newBag }})
         }
+        case SHUFFLE_BAG: {
+            const { ingredients } = action.payload
+            return AppState.update(state, { bag: { '$set': ingredients }})
+        }
         default: {
             return state
         }
     }
+}
+
+// Util functions
+const weights = {
+    'protein': 1,
+    'fruit': 1.3,
+    'vegetable': 1.3,
+    'grain': 1.5,
+    'dairy': 1.6,
+    'herb': 1.7,
+    'bean': 1.5
+}
+
+function getTime (ingredient, skill, tool) {
+    console.log(skill)
+    const x = 1/(-(weights[ingredient.subclass] + skill.level/100))
+    const time = ((3 * (Math.pow(x, 2))) - 2 *(Math.pow(x, 3)) * 20000) - (tool.quality * 10) - (skill.level * 20)
+    return Math.round(time)
 }
 
 function sortBySubclass (ingredients) {
@@ -119,12 +136,9 @@ function removeDupes (ingredients) {
 }
 
 // TODO
-function lookupCommonNames (ingredients) {
-    const table = {
-    }
-}
+function lookupCommonNames (ingredients) {}
 
-export function generateItemName (item) {
+function generateItemName (item) {
     if (item.cookedState === 'raw' && item.processedState === 'unprocessed') {
         return item.name
     }
@@ -136,7 +150,8 @@ export function generateItemName (item) {
     }
     else if (item.cookedState === 'raw' && item.processedState !== 'unprocessed') {
         return item.processedState + ' ' + item.name
-    } else {
+    } 
+    else {
         return item.name
     }
 }

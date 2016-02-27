@@ -1,14 +1,18 @@
+// Display logic
 import React from 'react'
 import ReactCSSTransitionGroup from 'react-addons-css-transition-group'
-import _ from 'lodash'
 import {render} from 'react-dom'
 import cx from 'classnames'
 
+// Redux
 import store from './store'
 import { connect, Provider } from 'react-redux'
 
-import {generateItemName, addToBag, applySkill, selectTool} from './domains/bag'
-import * as fixtures from './domains/fixtures'
+// Action creators
+import {addToBag, shuffleBag, applySkill, selectTool} from './domains/bag'
+
+// Utils
+import _ from 'lodash'
 
 let KitchenContainer = ({...props}) => {
     return (
@@ -36,7 +40,8 @@ const mapStateToProps = (state, ownProps) => {
         itemCount: _.values(state.bag).length,
         currentTool: state.currentTool,
         preppedItems: _.values(state.preppedItems),
-        user: state.user
+        user: state.user,
+        _skillsTable: state._subclassSkillsTable
     }
 }
 
@@ -44,6 +49,9 @@ const mapDispatchToProps = (dispatch, ownProps) => {
     return {
         addToBag: () => {
             return dispatch(addToBag())
+        },
+        shuffleBag: () => {
+            return dispatch(shuffleBag())
         },
         applySkill: (ingredient, skill, tool) => {
             return dispatch(applySkill(ingredient, skill, tool))
@@ -83,18 +91,18 @@ const ToolBelt = ({ user: { tools }, selectTool, currentTool }) => {
 }
 
 // TODO SKILL PICKER for items that have multiple options
-const BagItem = ({ children, applySkill, currentTool, items, user }) => {
+const BagItem = ({ children, applySkill, currentTool, items, _skillsTable }) => {
+    const subclass = items[0].subclass
+    const skills = currentTool && currentTool.skills.filter(s => _skillsTable[subclass].indexOf(s.name) !== -1)
     const isNotProcessing = _.every(items, i => !i.time)
     const isProcessing = _.some(items, i => i.time)
     const className = cx('bag-item', {'bag-item--processing': isProcessing })
-    let onClick = _.noop
-    if (currentTool && isNotProcessing) {
-        let skill = currentTool.skills[0]
-        onClick = () => applySkill(items[0], skill, currentTool)
-    }
     return (
-        <div className={className} onClick={onClick}>
-                {children}
+        <div className={className}>
+            {children}
+            { currentTool && isNotProcessing && 
+                <span>{ skills.map(s => <button onClick={() => applySkill(items[0], s, currentTool) }key={s.name}>{s.name}</button>) }</span>
+            }
         </div>
     )
     
@@ -111,7 +119,7 @@ const BagItems = ({ ...props }) => {
     })
     return (
         <div>
-            <ReactCSSTransitionGroup transitionName="bag-items" transitionEnterTimeout={10} transitionLeaveTimeout={600}>
+            <ReactCSSTransitionGroup transitionName="bag-items" transitionEnterTimeout={10} transitionLeaveTimeout={200}>
                 {bagItems}
             </ReactCSSTransitionGroup>
         </div>
@@ -134,7 +142,7 @@ const Bag = ({ items, itemCount, addToBag, ...props }) => {
 
 
 const Prepped = ({ preppedItems }) => {
-    const grouped = _.groupBy(preppedItems, i => generateItemName(i))
+    const grouped = _.groupBy(preppedItems, 'name')
     const groupedItems = []
     _.forIn(grouped, (value, key) => {
         const string = value.length ? `${key} (${value.length})` : `${key}`

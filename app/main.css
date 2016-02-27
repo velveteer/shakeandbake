@@ -17,13 +17,18 @@
 .bag-item {
     cursor: pointer;
     padding: 10px;
+    margin: 10px 10px 10px 0;
     background: rgba(0,0,0,0.3);
     display: inline-block;
     transition: opacity 500ms ease-in;
 }
 
+.bag-item button {
+    margin-left: 10px;
+}
+
 .bag-item:hover {
-    background: rgba(0,0,0,0.1);
+    /*background: rgba(0,0,0,0.1);*/
 }
 
 .bag-item--processing {
