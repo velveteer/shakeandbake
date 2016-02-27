@@ -1,6 +1,5 @@
 import t from 'tcomb'
 import _ from 'lodash'
-import {vegetables as vegetablesFixture} from '../fixtures'
 
 // Enums will be constructed out of these constant/finite lists
 export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
@@ -15,14 +14,16 @@ export const SKILL_STATE_TABLE = {
     grill: 'grilled',
     steam: 'steamed',
     roast: 'roasted',
-    broil: 'broiled'
+    broil: 'broiled',
+    crush: 'crushed'
 }
 
 // Processing Skills -- by subclass
 export const P_PROCESSING_SKILLS = ['cube', 'slice']
 export const VF_PROCESSING_SKILLS = ['chop', 'slice', 'mince']
+export const H_PROCESSING_SKILLS = ['mince', 'crush']
 
-export const PROCESSING_SKILLS = _.union(P_PROCESSING_SKILLS, VF_PROCESSING_SKILLS)
+export const PROCESSING_SKILLS = _.union(P_PROCESSING_SKILLS, VF_PROCESSING_SKILLS, H_PROCESSING_SKILLS)
 export const PROCESSING_STATES = ['unprocessed'].concat(PROCESSING_SKILLS.map(x => SKILL_STATE_TABLE[x]))
 
 // Cooking Skills -- by subclass
@@ -41,7 +42,8 @@ export const SUBCLASS_SKILLS_TABLE = {
     protein: P_PROCESSING_SKILLS.concat(P_COOKING_SKILLS),
     vegetable: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS),
     fruit: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS),
-    grain: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS)
+    grain: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS),
+    herb: H_PROCESSING_SKILLS
 }
 
 // A Rating is an integer between 0-100
@@ -92,9 +94,8 @@ Ingredient.prototype.getExpirationDate = function () {
 // Having to maintain equipment is tedious, but upgrading equipment can be rewarding.
 export const Tool = t.struct({
     name: t.Str,
-    rating: Rating,
     quality: Rating,
-    skills: t.list(t.enums.of(SKILLS_LIST))
+    skills: t.list(Skill)
 })
 
 // A user maintains experience and an array of various skills that increase in rating with repeated use
@@ -103,7 +104,6 @@ export const User = t.struct({
     first: t.Str,
     last: t.Str,
     xp: t.Num, 
-    skills: t.dict(t.Str, Skill),
     tools: t.dict(t.Str, Tool)
 })
 

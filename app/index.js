@@ -22,8 +22,9 @@ let KitchenContainer = ({...props}) => {
 
 const filterItemsBySkill = (items, currentTool, subclassSkillsTable) => {
     if (currentTool) {
+        const skills = currentTool.skills.map(i => i.name)
         return items.filter(i => {
-            return _.intersection(currentTool.skills, subclassSkillsTable[i.subclass]).length
+            return _.intersection(skills, subclassSkillsTable[i.subclass]).length
         })
     }
     return items
@@ -32,6 +33,7 @@ const filterItemsBySkill = (items, currentTool, subclassSkillsTable) => {
 const mapStateToProps = (state, ownProps) => {
     return {
         items: filterItemsBySkill(_.values(state.bag), state.currentTool, state._subclassSkillsTable),
+        itemCount: _.values(state.bag).length,
         currentTool: state.currentTool,
         preppedItems: _.values(state.preppedItems),
         user: state.user
@@ -54,16 +56,24 @@ const mapDispatchToProps = (dispatch, ownProps) => {
 
 KitchenContainer = connect(mapStateToProps, mapDispatchToProps)(KitchenContainer)
 
+const renderToolSkills = (tool) => {
+    return tool.skills.map(s => {
+        return <div key={s.name}>{s.name}: {s.level}</div>
+    })
+    
+}
 const ToolBelt = ({ user: { tools }, selectTool, currentTool }) => {
     return (
         <div>
             <h1>Toolbelt</h1>
-            <div>
+            <div className="toolbelt-container">
                 { _.values(tools).map(tool => {
                     const className = cx('tool', { 'tool--selected': currentTool && currentTool.name === tool.name })
                     return (
                         <div key={tool.name} className={className} onClick={() => selectTool(tool)}>
-                            { `${tool.name} ${tool.rating}` }
+                            <div>{ tool.name }</div>
+                            <div>quality: { tool.quality }</div>
+                            <div>{ renderToolSkills(tool) }</div>
                         </div>
                     )}
                 )}
@@ -79,7 +89,7 @@ const BagItem = ({ children, applySkill, currentTool, items, user }) => {
     const className = cx('bag-item', {'bag-item--processing': isProcessing })
     let onClick = _.noop
     if (currentTool && isNotProcessing) {
-        let skill = user.skills[currentTool.skills[0]]
+        let skill = currentTool.skills[0]
         onClick = () => applySkill(items[0], skill, currentTool)
     }
     return (
@@ -109,12 +119,13 @@ const BagItems = ({ ...props }) => {
 }
 
 
-const Bag = ({ items, addToBag, ...props }) => {
+const Bag = ({ items, itemCount, addToBag, ...props }) => {
     return (
         <div>
             <h1>Bag</h1>
             <header>
                 <button onClick={addToBag}>Add random item</button>
+                <div className="item-count">Viewing: {items.length} / {itemCount}</div>
             </header>
             <BagItems items={items} {...props} />
         </div>
@@ -123,17 +134,19 @@ const Bag = ({ items, addToBag, ...props }) => {
 
 
 const Prepped = ({ preppedItems }) => {
+    const grouped = _.groupBy(preppedItems, i => generateItemName(i))
+    const groupedItems = []
+    _.forIn(grouped, (value, key) => {
+        const string = value.length ? `${key} (${value.length})` : `${key}`
+        groupedItems.push(
+            <div key={string}>{string}</div>
+        )
+    })
     return (
         <div>
             <h1>Prepped</h1>
             <div className="prepped-container">
-                { _.values(preppedItems).map(item=> {
-                    return (
-                        <div key={item.id}>
-                            { generateItemName(item) }
-                        </div>
-                    )}
-                )}
+                { groupedItems }
             </div>
         </div>
     )

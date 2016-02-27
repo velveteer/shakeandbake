@@ -12,7 +12,7 @@ export const ADD_TO_BAG = 'ADD_TO_BAG'
 export const SELECT_TOOL = 'SELECT_TOOL'
 
 export const addToBag = ingredient => {
-    const subclasses = ['protein', 'vegetable', 'fruit', 'grain']
+    const subclasses = ['protein', 'vegetable', 'fruit', 'grain', 'herb']
     return { type: ADD_TO_BAG, payload: { ingredient: fixtures.makeRandomIngredient(_.shuffle(subclasses)[0]) }}
 }
 
@@ -30,17 +30,17 @@ export const selectTool = tool => {
 
 const weights = {
     'protein': 1,
-    'fruit': 1.1,
-    'vegetable': 1.1,
-    'grain': 1.2,
-    'dairy': 1.3,
-    'jews': 1.4
+    'fruit': 1.3,
+    'vegetable': 1.3,
+    'grain': 1.5,
+    'dairy': 1.7,
+    'herb': 1.8
 }
 
 function getTime (ingredient, skill, tool) {
     const x = 1/(-(weights[ingredient.subclass] + skill.level/100))
     console.log(x)
-    const time = ((3 * (Math.pow(x, 2))) - 2 *(Math.pow(x, 3)) * 7000) - (tool.quality * 4) - (tool.rating * 10)
+    const time = ((3 * (Math.pow(x, 2))) - 2 *(Math.pow(x, 3)) * 20000) - (tool.quality * 10) - (skill.level * 5)
     return Math.round(time)
 }
 

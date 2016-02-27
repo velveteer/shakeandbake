@@ -1,5 +1,12 @@
+.toolbelt-container {
+    display: flex;
+    
+}
+
 .tool {
-    padding: 20px 0;
+    padding: 20px;
+    margin-right: 20px;
+    display: inline-block;
     cursor: pointer;
 }
 
@@ -10,7 +17,6 @@
 .bag-item {
     cursor: pointer;
     padding: 10px;
-    margin: 0 auto;
     background: rgba(0,0,0,0.3);
     display: inline-block;
     transition: opacity 500ms ease-in;
@@ -50,4 +56,7 @@
     height: 300px;
     overflow-y: auto;
 } 
+
+.item-count {
+    float: right;
 }
