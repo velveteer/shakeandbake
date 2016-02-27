@@ -57,3 +57,7 @@ LEVEL 1 - 3
 LEVEL 5 - 4
 LEVEL 10  - 5
 etc.
+
+CAN APPLY SPICES TO INGREDIENTS -- each subclass has a defined amount of SPICE SLOTS
+
+Tool quality decay is a function of tool RATING -- is this tool level? what is this?

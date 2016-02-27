@@ -5,8 +5,6 @@ import {vegetables as vegetablesFixture} from '../fixtures'
 // Enums will be constructed out of these constant/finite lists
 export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
 
-export const TOOLS_LIST = [['joshs chefs knife', 1], ['richs trusty blade', 10], ['masamune', 100]]
-
 export const SKILL_STATE_TABLE = {
     cube: 'cubed',
     chop: 'chopped',
@@ -38,6 +36,13 @@ export const COOKING_STATES = ['raw'].concat(COOKING_SKILLS.map(x => SKILL_STATE
 // All skills and states
 export const SKILLS_LIST = _.union(PROCESSING_SKILLS, COOKING_SKILLS)
 export const STATES_LIST = _.union(PROCESSING_STATES, COOKING_STATES)
+
+export const MASTER_TABLE = {
+    protein: P_PROCESSING_SKILLS.concat(P_COOKING_SKILLS),
+    vegetable: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS),
+    fruit: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS),
+    grain: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS)
+}
 
 // A Rating is an integer between 0-100
 export const Rating = t.subtype(t.Num, n => n >= 0 && n <= 100)
@@ -88,7 +93,8 @@ Ingredient.prototype.getExpirationDate = function () {
 export const Tool = t.struct({
     name: t.Str,
     rating: Rating,
-    quality: Rating
+    quality: Rating,
+    skills: t.list(t.enums.of(SKILLS_LIST))
 })
 
 // A user maintains experience and an array of various skills that increase in rating with repeated use
@@ -155,8 +161,10 @@ Baron.prototype.feed = function (recipe) {
 // A catch-all type for our kitchen state
 export const AppState = t.struct({
     bag: t.dict(t.Str, Ingredient),
-    staging: t.dict(t.Str, Ingredient),
+    preppedItems: t.dict(t.Str, Ingredient),
+    currentTool: t.maybe(Tool),
     menu: t.dict(t.Str, Course),
-    skillTable: t.Object,
-    user: User
+    user: User,
+   _skillTable: t.Object,
+   _masterTable: t.Object
 })

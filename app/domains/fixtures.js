@@ -31,8 +31,26 @@ function makeAllSkills () {
 }
 
 // Tools
+const TOOLS_LIST = [
+    {
+        name: 'joshs chefs knife',
+        rating: 1, 
+        skills: ['slice','chop']
+    },
+    {
+        name: 'richs trusty blade',
+        rating: 10, 
+        skills: ['chop', 'mince']
+    },
+    {
+        name: 'masamune',
+        rating: 100,
+        skills: ['slice']
+    }
+]
+
 function makeAllTools () {
-    return _.keyBy(types.TOOLS_LIST.map(i => types.Tool({name: i[0], rating: i[1], quality: 100})), 'name')
+    return _.keyBy(TOOLS_LIST.map(tool => types.Tool({ ...tool, quality: 1})), 'name')
 }
 
 // User
@@ -44,3 +62,4 @@ export const user = types.User({
     skills: makeAllSkills(),
     tools: makeAllTools()
 })
+

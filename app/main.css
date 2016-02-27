@@ -1,0 +1,8 @@
+.tool {
+    padding: 20px 0;
+    cursor: pointer;
+}
+
+.tool--selected {
+    background: pink;
+}
