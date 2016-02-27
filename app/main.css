@@ -6,3 +6,48 @@
 .tool--selected {
     background: pink;
 }
+
+.bag-item {
+    cursor: pointer;
+    padding: 10px;
+    margin: 0 auto;
+    background: rgba(0,0,0,0.3);
+    display: inline-block;
+    transition: opacity 500ms ease-in;
+}
+
+.bag-item:hover {
+    background: rgba(0,0,0,0.1);
+}
+
+.bag-item--processing {
+    background-color: lightblue;
+    transition-property: transform, opacity;
+    transition-duration: 12s;
+    transition-timing-function: cubic-bezier(0.04, 0.9, 0.11, 0.9);
+    transform: scale(.7, .7)
+}
+
+.bag-items-enter {
+  opacity: 0.01;
+}
+
+.bag-items-enter.bags-item-enter-active {
+  opacity: 1;
+  transition: opacity 500ms ease-in;
+}
+
+.bag-items-leave {
+  opacity: 1;
+}
+
+.bag-items-leave.bag-items-leave-active {
+  opacity: 0.01;
+  transition: opacity 300ms ease-in;
+}
+
+.prepped-container {
+    height: 300px;
+    overflow-y: auto;
+} 
+}

@@ -1,6 +1,6 @@
 import _ from 'lodash'
 import t from 'tcomb'
-import {Ingredient, AppState, Course, SKILL_STATE_TABLE, MASTER_TABLE} from '../types'
+import {Ingredient, AppState, Course, SKILL_STATE_TABLE, SUBCLASS_SKILLS_TABLE} from '../types'
 import * as fixtures from './fixtures'
 
 export const APPLY_SKILL_START = 'APPLY_SKILL_START'
@@ -30,16 +30,17 @@ export const selectTool = tool => {
 
 const weights = {
     'protein': 1,
-    'fruits': 1.2,
-    'vegetable': 1.3,
-    'grain': 1.4,
-    'dairy': 1.5,
-    'jews': 1.6 
+    'fruit': 1.1,
+    'vegetable': 1.1,
+    'grain': 1.2,
+    'dairy': 1.3,
+    'jews': 1.4
 }
 
 function getTime (ingredient, skill, tool) {
     const x = 1/(-(weights[ingredient.subclass] + skill.level/100))
-    const time = ((3 * (Math.pow(x, 2))) - 2 *(Math.pow(x, 3)) * 5000) - (tool.quality * 3) - (tool.rating * 3)
+    console.log(x)
+    const time = ((3 * (Math.pow(x, 2))) - 2 *(Math.pow(x, 3)) * 7000) - (tool.quality * 4) - (tool.rating * 10)
     return Math.round(time)
 }
 
@@ -51,7 +52,7 @@ const initialState = AppState({
     preppedItems: {},
     menu: {},
     _skillTable: SKILL_STATE_TABLE,
-    _masterTable: MASTER_TABLE
+    _subclassSkillsTable: SUBCLASS_SKILLS_TABLE
 })
 
 export function bag (state = initialState, action) {
@@ -65,15 +66,14 @@ export function bag (state = initialState, action) {
         }
         case APPLY_SKILL_START: {
             const { ingredient, time } = action.payload
-            const newIngredient = Ingredient.update(ingredient, { isProcessing: { '$set': true }})
+            const newIngredient = Ingredient.update(ingredient, { time: { '$set': time }})
             return AppState.update(state, { bag: { '$merge': { [newIngredient.id]: newIngredient }}})
         }
         case APPLY_SKILL_END: {
             // Apply state to ingredient, remove it from the bag, move it to prep area
-            const { ingredient, skill: { name, rating }} = action.payload
-            console.log(action)
+            const { ingredient, skill: { name, level }} = action.payload
             const processedState = state._skillTable[name]
-            const newIngredient = Ingredient.update(ingredient, { processedState: { '$set': processedState }})
+            const newIngredient = Ingredient.update(ingredient, { processedState: { '$set': processedState}, time: { '$set': 0 }})
             return AppState.update(state, { bag: { '$remove': [newIngredient.id] }, preppedItems: { '$merge': { [newIngredient.id]: newIngredient } }})
         }
         case COOK_ITEM: {
@@ -85,7 +85,7 @@ export function bag (state = initialState, action) {
             const ingredients = _.values(state.preppedItems)
             // Construct course for menu -- ingredients must be processed somehow, but being cooked is optional
             if (ingredients.length) {
-                const name = generateName(ingredients)
+                const name = generateCourseName(ingredients)
                 const newMenu = { [name]: ingredients }
                 // Remove all ingredients from prep 
                 return AppState.update(state, { preppedItems: { '$set': {} }, menu: { '$merge': newMenu }})
@@ -118,33 +118,37 @@ function removeDupes (ingredients) {
     })
 }
 
+// TODO
 function lookupCommonNames (ingredients) {
     const table = {
     }
 }
 
-function generateName (ingredients) {
+export function generateItemName (item) {
+    if (item.cookedState === 'raw' && item.processedState === 'unprocessed') {
+        return item.name
+    }
+    else if (item.cookedState !== 'raw' && item.processedState === 'unprocessed'){
+        return item.cookedState + ' ' + item.name
+    }
+    else if (item.cookedState !== 'raw' && item.processedState !== 'unprocessed'){
+        return item.cookedState  + ' ' + item.name
+    }
+    else if (item.cookedState === 'raw' && item.processedState !== 'unprocessed') {
+        return item.processedState + ' ' + item.name
+    } else {
+        return item.name
+    }
+}
+
+function generateCourseName (ingredients) {
     let finalIngredients = sortBySubclass(removeDupes(ingredients))
     let final = []
     let i 
 
     for (i = 0; i < finalIngredients.length; i++){
         let item = finalIngredients[i]
-        
-        let string
-        
-        if (item.cookedState === 'raw' && item.processedState === 'unprocessed') {
-            string = item.name
-        }
-        else if (item.cookedState !== 'raw' && item.processedState === 'unprocessed'){
-            string = item.cookedState + ' ' + item.name
-        }
-        else if (item.cookedState !== 'raw' && item.procssedState !== 'unprocessed'){
-            string = item.cookedState  + ' ' + item.name
-        }
-        else {
-            string = item.name
-        }
+        let string = generateItemName(item)
         
         if (i === 0 && finalIngredients.length > 3){
             final.push(string + ', ')
@@ -168,15 +172,3 @@ function generateName (ingredients) {
     }
     return final.join('');
 }
-
-const ingredient = fixtures.makeRandomIngredient('protein')
-const slice = fixtures.slice
-const knife = fixtures.knife
-const user = fixtures.user
-
-//const state1 = bag(initialState, { type: APPLY_SKILL_START, payload: { ingredient: fixtures.makeRandomIngredient('vegetable'), skill: fixtures.slice }})
-//const state2 = bag(state1, { type: APPLY_SKILL_START, payload: { ingredient: fixtures.makeRandomIngredient('protein'), skill: fixtures.slice }})
-//const state3 = bag(state2, { type: APPLY_SKILL_START, payload: { ingredient: fixtures.makeRandomIngredient('grain'), skill: fixtures.slice }})
-//console.log('Make course: ', bag(state3, { type: MAKE_COURSE }))
-//console.log('Add to bag: ', bag(initialState, {type: ADD_TO_BAG, payload: { ingredient: fixtures.carrots }}))
-//console.log(applySkill(ingredient, slice, knife))

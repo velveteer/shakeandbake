@@ -37,7 +37,7 @@ export const COOKING_STATES = ['raw'].concat(COOKING_SKILLS.map(x => SKILL_STATE
 export const SKILLS_LIST = _.union(PROCESSING_SKILLS, COOKING_SKILLS)
 export const STATES_LIST = _.union(PROCESSING_STATES, COOKING_STATES)
 
-export const MASTER_TABLE = {
+export const SUBCLASS_SKILLS_TABLE = {
     protein: P_PROCESSING_SKILLS.concat(P_COOKING_SKILLS),
     vegetable: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS),
     fruit: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS),
@@ -64,7 +64,7 @@ export const Ingredient = t.struct({
     subclass: t.Str,
     expiresIn: t.Num,
     quality: Rating,
-    isProcessing: t.Bool,
+    time: t.maybe(t.Num),
     processCount: t.Num,
     cookedState: t.enums.of(COOKING_STATES),
     processedState: t.enums.of(PROCESSING_STATES)
@@ -166,5 +166,5 @@ export const AppState = t.struct({
     menu: t.dict(t.Str, Course),
     user: User,
    _skillTable: t.Object,
-   _masterTable: t.Object
+   _subclassSkillsTable: t.Object
 })

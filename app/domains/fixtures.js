@@ -17,7 +17,7 @@ export function makeRandomIngredient (subclass) {
         subclass: subclass,
         expiresIn: _.random(5, 30),
         quality: _.random(0, 100),
-        isProcessing: false,
+        time: 0,
         processCount: 0,
         cookedState: 'raw',
         processedState: 'unprocessed'
