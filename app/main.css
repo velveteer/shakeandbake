@@ -10,8 +10,11 @@ body h1 {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: space-between;
     align-items: center;
+}
+
+.toolbelt-container {
+    justify-content: space-between;
 }
 
 .tool {
@@ -31,7 +34,6 @@ body h1 {
 .bag-item {
     /*cursor: pointer;*/
     font-size: 12px;
-    flex-grow: 0;
     padding: 4px;
     margin: 10px 10px 10px 0;
     background: rgba(0,0,0,0.1);

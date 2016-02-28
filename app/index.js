@@ -24,28 +24,17 @@ let KitchenContainer = ({...props}) => {
     )
 }
 
-const filterItemsBySkill = (items, currentTool, subclassSkillsTable) => {
-    //if (currentTool) {
-    //    const skills = currentTool.skills.map(i => i.name)
-    //    return items.filter(i => {
-    //        return _.intersection(skills, subclassSkillsTable[i.subclass]).length
-    //    })
-    //}
-    return items
-}
-
-const mapStateToProps = (state, ownProps) => {
+const mapStateToProps = state => {
     return {
-        items: filterItemsBySkill(_.values(state.kitchen.bag), state.kitchen.currentTool, state.kitchen._subclassSkillsTable),
-        itemCount: _.values(state.kitchen.bag).length,
-        currentTool: state.kitchen.currentTool,
+        items: _.values(state.kitchen.bag),
         preppedItems: _.values(state.kitchen.preppedItems),
+        currentTool: state.kitchen.currentTool,
         user: state.user.user,
         _skillsTable: state.kitchen._subclassSkillsTable
     }
 }
 
-const mapDispatchToProps = (dispatch, ownProps) => {
+const mapDispatchToProps = dispatch => {
     return {
         addToBag: () => {
             return dispatch(addToBag())
@@ -126,13 +115,12 @@ const BagItems = ({ ...props }) => {
 }
 
 
-const Bag = ({ items, itemCount, addToBag, ...props }) => {
+const Bag = ({ items, addToBag, ...props }) => {
     return (
         <div>
             <h1>Bag</h1>
             <header>
                 <button onClick={addToBag}>Add random item</button>
-                <div className="item-count">Viewing: {items.length} / {itemCount}</div>
             </header>
             <BagItems items={items} {...props} />
         </div>

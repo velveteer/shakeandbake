@@ -112,7 +112,6 @@ const weights = {
 }
 
 function getTime (ingredient, skill, tool) {
-    console.log(skill)
     const x = 1/(-(weights[ingredient.subclass] + skill.level/100))
     const time = ((3 * (Math.pow(x, 2))) - 2 *(Math.pow(x, 3)) * 20000) - (tool.quality * 10) - (skill.level * 20)
     return Math.round(time)
