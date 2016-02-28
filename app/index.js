@@ -25,12 +25,12 @@ let KitchenContainer = ({...props}) => {
 }
 
 const filterItemsBySkill = (items, currentTool, subclassSkillsTable) => {
-    if (currentTool) {
-        const skills = currentTool.skills.map(i => i.name)
-        return items.filter(i => {
-            return _.intersection(skills, subclassSkillsTable[i.subclass]).length
-        })
-    }
+    //if (currentTool) {
+    //    const skills = currentTool.skills.map(i => i.name)
+    //    return items.filter(i => {
+    //        return _.intersection(skills, subclassSkillsTable[i.subclass]).length
+    //    })
+    //}
     return items
 }
 
@@ -95,7 +95,7 @@ const BagItem = ({ children, applySkill, currentTool, items, _skillsTable }) => 
     const skills = currentTool && currentTool.skills.filter(s => _skillsTable[subclass].indexOf(s.name) !== -1)
     const isNotProcessing = _.every(items, i => !i.time)
     const isProcessing = _.some(items, i => i.time)
-    const className = cx('bag-item', {'bag-item--processing': isProcessing })
+    const className = cx('bag-item', {'bag-item--processing': isProcessing, 'bag-item--has-skills': skills && skills.length })
     return (
         <div className={className}>
             <span className="bag-item-name">{children}</span>
@@ -118,7 +118,7 @@ const BagItems = ({ ...props }) => {
     })
     return (
         <div>
-            <ReactCSSTransitionGroup className="bag-items-container" transitionName="bag-items" transitionEnterTimeout={10} transitionLeaveTimeout={10}>
+            <ReactCSSTransitionGroup className="bag-items-container" transitionName="bag-items" transitionEnterTimeout={10} transitionLeaveTimeout={500}>
                 {bagItems}
             </ReactCSSTransitionGroup>
         </div>

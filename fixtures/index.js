@@ -1,3 +1,0 @@
-export {vegetables} from './vegetables'
-
-
