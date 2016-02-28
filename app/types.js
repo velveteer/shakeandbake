@@ -23,6 +23,8 @@ export const SKILL_STATE_TABLE = {
 }
 
 // Processing Skills -- by subclass
+// TODO Whole ingredients
+export const BASE_PROCESSING_SKILLS = ['whole']
 export const P_PROCESSING_SKILLS = ['cube', 'slice']
 export const VF_PROCESSING_SKILLS = ['chop', 'slice', 'mince', 'puree']
 export const H_PROCESSING_SKILLS = ['mince', 'crush']
@@ -33,11 +35,11 @@ export const PROCESSING_SKILLS = _.union(P_PROCESSING_SKILLS, VF_PROCESSING_SKIL
 export const PROCESSING_STATES = ['unprocessed'].concat(PROCESSING_SKILLS.map(x => SKILL_STATE_TABLE[x]))
 
 // Cooking Skills -- by subclass
-export const A_COOKING_SKILLS = ['fry'] // because you can fry anything
+export const BASE_COOKING_SKILLS = ['fry'] // because you can fry anything
 export const VF_COOKING_SKILLS = ['bake', 'grill', 'steam', 'roast']
 export const P_COOKING_SKILLS = ['roast', 'grill', 'broil']
 
-export const COOKING_SKILLS = _.union(A_COOKING_SKILLS, VF_COOKING_SKILLS, P_COOKING_SKILLS)
+export const COOKING_SKILLS = _.union(BASE_COOKING_SKILLS, VF_COOKING_SKILLS, P_COOKING_SKILLS)
 export const COOKING_STATES = ['raw'].concat(COOKING_SKILLS.map(x => SKILL_STATE_TABLE[x]))
 
 // All skills and states
@@ -171,7 +173,6 @@ export const AppState = t.struct({
     preppedItems: t.dict(t.Str, Ingredient),
     currentTool: t.maybe(Tool),
     menu: t.dict(t.Str, Course),
-    user: User,
    _skillTable: t.Object,
    _subclassSkillsTable: t.Object
 })

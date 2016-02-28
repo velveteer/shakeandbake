@@ -35,12 +35,12 @@ export function makeRandomIngredient (subclass) {
 const TOOLS_LIST = [
     {
         name: 'joshs chefs knife',
-        skills: [{name: 'mince', level: 1}],
+        skills: [{name: 'mince', level: 1}, {name: 'slice', level: 1}],
         quality: 1
     },
     {
         name: 'richs trusty blade',
-        skills: [{name: 'chop', level: 1}],
+        skills: [{name: 'chop', level: 1}, {name: 'crush', level: 50}],
         quality: 1
     },
     {

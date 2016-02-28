@@ -9,7 +9,7 @@ import store from './store'
 import { connect, Provider } from 'react-redux'
 
 // Action creators
-import {addToBag, shuffleBag, applySkill, selectTool} from './domains/bag'
+import {addToBag, shuffleBag, applySkill, selectTool} from './domains/kitchen'
 
 // Utils
 import _ from 'lodash'
@@ -17,8 +17,8 @@ import _ from 'lodash'
 let KitchenContainer = ({...props}) => {
     return (
         <div> 
-            <Bag {...props} />
             <ToolBelt {...props} />
+            <Bag {...props} />
             <Prepped {...props} />
         </div>
     )
@@ -36,12 +36,12 @@ const filterItemsBySkill = (items, currentTool, subclassSkillsTable) => {
 
 const mapStateToProps = (state, ownProps) => {
     return {
-        items: filterItemsBySkill(_.values(state.bag), state.currentTool, state._subclassSkillsTable),
-        itemCount: _.values(state.bag).length,
-        currentTool: state.currentTool,
-        preppedItems: _.values(state.preppedItems),
-        user: state.user,
-        _skillsTable: state._subclassSkillsTable
+        items: filterItemsBySkill(_.values(state.kitchen.bag), state.kitchen.currentTool, state.kitchen._subclassSkillsTable),
+        itemCount: _.values(state.kitchen.bag).length,
+        currentTool: state.kitchen.currentTool,
+        preppedItems: _.values(state.kitchen.preppedItems),
+        user: state.user.user,
+        _skillsTable: state.kitchen._subclassSkillsTable
     }
 }
 
@@ -66,7 +66,7 @@ KitchenContainer = connect(mapStateToProps, mapDispatchToProps)(KitchenContainer
 
 const renderToolSkills = (tool) => {
     return tool.skills.map(s => {
-        return <div key={s.name}>{s.name}: {s.level}</div>
+        return <div className="tool-info" key={s.name}>{s.name}: {s.level}</div>
     })
     
 }
@@ -80,7 +80,7 @@ const ToolBelt = ({ user: { tools }, selectTool, currentTool }) => {
                     return (
                         <div key={tool.name} className={className} onClick={() => selectTool(tool)}>
                             <div>{ tool.name }</div>
-                            <div>quality: { tool.quality }</div>
+                            <div className="tool-info">quality: { tool.quality }</div>
                             <div>{ renderToolSkills(tool) }</div>
                         </div>
                     )}
@@ -90,7 +90,6 @@ const ToolBelt = ({ user: { tools }, selectTool, currentTool }) => {
     )
 }
 
-// TODO SKILL PICKER for items that have multiple options
 const BagItem = ({ children, applySkill, currentTool, items, _skillsTable }) => {
     const subclass = items[0].subclass
     const skills = currentTool && currentTool.skills.filter(s => _skillsTable[subclass].indexOf(s.name) !== -1)
@@ -99,7 +98,7 @@ const BagItem = ({ children, applySkill, currentTool, items, _skillsTable }) => 
     const className = cx('bag-item', {'bag-item--processing': isProcessing })
     return (
         <div className={className}>
-            {children}
+            <span className="bag-item-name">{children}</span>
             { currentTool && isNotProcessing && 
                 <span>{ skills.map(s => <button onClick={() => applySkill(items[0], s, currentTool) }key={s.name}>{s.name}</button>) }</span>
             }
@@ -119,7 +118,7 @@ const BagItems = ({ ...props }) => {
     })
     return (
         <div>
-            <ReactCSSTransitionGroup transitionName="bag-items" transitionEnterTimeout={10} transitionLeaveTimeout={200}>
+            <ReactCSSTransitionGroup className="bag-items-container" transitionName="bag-items" transitionEnterTimeout={10} transitionLeaveTimeout={10}>
                 {bagItems}
             </ReactCSSTransitionGroup>
         </div>
@@ -141,13 +140,18 @@ const Bag = ({ items, itemCount, addToBag, ...props }) => {
 }
 
 
+// TODO Cooking AND COMBINING prepped items
+const PreppedItem = ({ items }) => {}
+
 const Prepped = ({ preppedItems }) => {
     const grouped = _.groupBy(preppedItems, 'name')
     const groupedItems = []
     _.forIn(grouped, (value, key) => {
         const string = value.length ? `${key} (${value.length})` : `${key}`
         groupedItems.push(
-            <div key={string}>{string}</div>
+            <div className="bag-item bag-item-prepped" key={string}>
+                <span className="bag-item-name">{string}</span>
+            </div>
         )
     })
     return (

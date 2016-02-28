@@ -61,3 +61,6 @@ etc.
 CAN APPLY SPICES TO INGREDIENTS -- each subclass has a defined amount of SPICE SLOTS
 
 Tool quality decay is a function of tool RATING -- is this tool level? what is this?
+
+USER has to prep COOKING TOOLS -- i.e. warm up oven. Won't be able to bake bread if the oven isn't ready -- but if the dough is processed it will lose quality over time, so the user needs to make 
+sure the oven is warmed before they process their dough for MAXIMUM quality.

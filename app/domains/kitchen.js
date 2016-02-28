@@ -11,7 +11,6 @@ export const MAKE_COURSE = 'MAKE_COURSE'
 export const ADD_TO_BAG = 'ADD_TO_BAG'
 export const SHUFFLE_BAG = 'SHUFFLE_BAG'
 export const SELECT_TOOL = 'SELECT_TOOL'
-export const PRESENT_SKILL_OPTIONS = 'PRESENT_SKILL_OPTIONS'
 
 
 // Action Creators
@@ -40,7 +39,6 @@ export const selectTool = tool => {
 const initialState = AppState({
     // TODO: Populate bag with some kind of seeding event
     bag: {},
-    user: fixtures.user,
     currentTool: null,
     preppedItems: {},
     menu: {},
@@ -48,7 +46,7 @@ const initialState = AppState({
     _subclassSkillsTable: SUBCLASS_SKILLS_TABLE
 })
 
-export function bag (state = initialState, action) {
+export function kitchen (state = initialState, action) {
     switch (action.type) {
         case SELECT_TOOL: {
             const { tool } = action.payload
