@@ -82,13 +82,12 @@ const ToolBelt = ({ user: { tools }, selectTool, currentTool }) => {
 const BagItem = ({ children, applySkill, currentTool, items, _skillsTable }) => {
     const subclass = items[0].subclass
     const skills = currentTool && currentTool.skills.filter(s => _skillsTable[subclass].indexOf(s.name) !== -1)
-    const isNotProcessing = _.every(items, i => !i.time)
     const isProcessing = _.some(items, i => i.time)
     const className = cx('bag-item', {'bag-item--processing': isProcessing, 'bag-item--has-skills': skills && skills.length })
     return (
         <div className={className}>
             <span className="bag-item-name">{children}</span>
-            { currentTool && isNotProcessing && 
+            { currentTool && !isProcessing && 
                 <span>{ skills.map(s => <button onClick={() => applySkill(items[0], s, currentTool) }key={s.name}>{s.name}</button>) }</span>
             }
         </div>

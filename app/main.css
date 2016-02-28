@@ -34,19 +34,14 @@ body h1 {
 .bag-item {
     /*cursor: pointer;*/
     font-size: 12px;
-    padding: 4px;
+    padding: 7px;
     margin: 10px 10px 10px 0;
     background: rgba(0,0,0,0.1);
     transition: opacity 500ms ease-in;
 }
 
 .bag-item--has-skills {
-    font-size: 12px;
-    flex-grow: 0;
-    padding: 10px;
-    margin: 10px 10px 10px 0;
     background: rgba(0,0,0,0.3);
-    transition: opacity 500ms ease-in;
 }
 
 
@@ -62,7 +57,7 @@ body h1 {
     margin-left: 10px;
     margin-bottom: 0px;
     font-size: 12px;
-    padding: 2px 5px;
+    padding: 0px 5px;
 }
 
 .bag-item:hover {
