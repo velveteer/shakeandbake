@@ -108,7 +108,8 @@ const weights = {
     'grain': 1.5,
     'dairy': 1.6,
     'herb': 1.7,
-    'bean': 1.5
+    'bean': 1.5,
+    'dough': 1.2
 }
 
 function getTime (ingredient, skill, tool) {

@@ -3,7 +3,7 @@ import _ from 'lodash'
 
 // Enums will be constructed out of these constant/finite lists
 export const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack', 'dessert']
-export const SUBCLASSES = ['protein', 'vegetable', 'fruit', 'grain', 'herb', 'bean']
+export const SUBCLASSES = ['protein', 'vegetable', 'fruit', 'grain', 'herb', 'bean', 'dough']
 
 export const SKILL_STATE_TABLE = {
     cube: 'cubed',
@@ -19,7 +19,8 @@ export const SKILL_STATE_TABLE = {
     crush: 'crushed',
     soak: 'soaked',
     puree: 'pureed',
-    powder: 'powdered'
+    powder: 'powdered',
+    roll: 'rolled'
 }
 
 // Processing Skills -- by subclass
@@ -30,8 +31,9 @@ export const VF_PROCESSING_SKILLS = ['chop', 'slice', 'mince', 'puree']
 export const H_PROCESSING_SKILLS = ['mince', 'crush']
 export const G_PROCESSING_SKILLS = ['crush', 'powder']
 export const BEAN_PROCESSING_SKILLS = ['soak', 'puree', 'powder']
+export const DOUGH_PROCESSING_SKILLS = ['roll']
 
-export const PROCESSING_SKILLS = _.union(P_PROCESSING_SKILLS, VF_PROCESSING_SKILLS, H_PROCESSING_SKILLS, G_PROCESSING_SKILLS, BEAN_PROCESSING_SKILLS)
+export const PROCESSING_SKILLS = _.union(P_PROCESSING_SKILLS, VF_PROCESSING_SKILLS, H_PROCESSING_SKILLS, G_PROCESSING_SKILLS, BEAN_PROCESSING_SKILLS, DOUGH_PROCESSING_SKILLS)
 export const PROCESSING_STATES = ['unprocessed'].concat(PROCESSING_SKILLS.map(x => SKILL_STATE_TABLE[x]))
 
 // Cooking Skills -- by subclass
@@ -52,7 +54,8 @@ export const SUBCLASS_SKILLS_TABLE = {
     fruit: VF_PROCESSING_SKILLS.concat(VF_COOKING_SKILLS),
     grain: G_PROCESSING_SKILLS,
     herb: H_PROCESSING_SKILLS,
-    bean: BEAN_PROCESSING_SKILLS
+    bean: BEAN_PROCESSING_SKILLS,
+    dough: DOUGH_PROCESSING_SKILLS
 }
 
 // A Rating is an integer between 0-100

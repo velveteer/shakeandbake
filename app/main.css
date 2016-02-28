@@ -5,26 +5,28 @@ body h1 {
 }
 
 .bag-items-container,
-.prepped-container,
+.prepped-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
 .toolbelt-container {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    align-items: center;
-}
-
-.toolbelt-container {
     justify-content: space-between;
 }
 
 .tool {
-    padding: 20px;
+    padding: 9px 15px;
     cursor: pointer;
     border: 2px solid rgba(0,0,0,0.1);
 }
 
 .tool--selected {
-    background: pink;
+    background: lightblue;
 }
 
 .tool-info {
@@ -40,17 +42,17 @@ body h1 {
     transition: opacity 500ms ease-in;
 }
 
-.bag-item--has-skills {
-    background: rgba(0,0,0,0.3);
+.bag-item--has-no-skills {
+    color: rgba(0,0,0,0.2) !important;
+    background: rgba(0,0,0,0.1) !important;
 }
-
 
 .bag-item-name {
     font-weight: 700;
 }
 
 .bag-item-prepped {
-    background: lightgreen;
+    /* background: lIightgreen; */
 }
 
 .bag-item button {
@@ -65,7 +67,7 @@ body h1 {
 }
 
 .bag-item--processing {
-    background-color: lightblue;
+    background: rgba(0,0,0,0.05) !important;
     transition-property: transform, opacity, background-color;
     transition-duration: 12s;
     transition-timing-function: cubic-bezier(0.04, 0.9, 0.11, 0.9);
@@ -90,6 +92,24 @@ body h1 {
     transition: opacity 300ms ease-in;
 }
 
-.item-count {
-    float: right;
+.bag-item-protein {
+    background: #FF6347;
+}
+
+.bag-item-vegetable {
+    background: #90EE90;
+    
+}
+.bag-item-fruit {
+    background: #FFBBFF;
+}
+
+.bag-item-grain {
+    background: #FEF0C9;
+}
+.bag-item-herb {
+    background: #7FFFD4;
+}
+.bag-item-bean {
+    background: rgba(0,0,0,0.3);
 }
